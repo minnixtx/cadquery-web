@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NL 3D Modeler</title>
+<link rel="stylesheet" href="/frontend/css/style.css">
+</head>
+<body>
+
+<header>
+    <div class="header-left">
+        <h1>NL 3D Modeler</h1>
+    </div>
+    <div class="header-right">
+        <div class="export-group">
+            <button class="btn" id="exportStlBtn">Export STL</button>
+            <button class="btn" id="exportStepBtn">Export STEP</button>
+        </div>
+        <button class="btn" id="settingsBtn">Settings</button>
+    </div>
+</header>
+
+<main class="panels">
+    <div class="panel panel-chat">
+        <div class="panel-header">Chat</div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="Describe your 3D model..." autocomplete="off">
+            <button class="btn btn-send" id="sendBtn">Send</button>
+        </div>
+    </div>
+
+    <div class="panel panel-code">
+        <div class="panel-header">CADQuery Script</div>
+        <pre id="codeDisplay"><code id="codeContent"></code></pre>
+    </div>
+
+    <div class="panel panel-viewer">
+        <div class="panel-header">3D Preview</div>
+        <div id="viewerContainer"></div>
+    </div>
+</main>
+
+<div class="modal-overlay" id="settingsOverlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Settings</h2>
+            <button class="modal-close" id="settingsClose">&times;</button>
+        </div>
+        <div class="modal-body">
+            <label for="endpointInput">API Endpoint</label>
+            <input type="text" id="endpointInput" placeholder="http://192.168.1.203:8000/v1">
+
+            <label for="modelInput">Model Name</label>
+            <input type="text" id="modelInput" placeholder="llama">
+
+            <label for="apiKeyInput">API Key (optional)</label>
+            <input type="password" id="apiKeyInput" placeholder="sk-...">
+
+            <button class="btn btn-primary" id="saveSettingsBtn">Save</button>
+        </div>
+    </div>
+</div>
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+    }
+}
+</script>
+<script type="module" src="/frontend/js/viewer.js"></script>
+<script src="/frontend/js/app.js"></script>
+
+</body>
+</html>
