@@ -93,3 +93,49 @@ Single-service `docker-compose.yml`:
 - Auto-retry once on LLM code errors, then surface error to user
 - Vision-based self-assessment: headless Playwright captures screenshot, LLM sees what it built
 - Session-only state (in-memory, no persistence across restarts)
+
+## Installation
+
+### Prerequisites
+
+- Docker Engine 24+
+- Docker Compose (v2, included with `docker-compose-plugin`)
+
+### Steps
+
+1. **Transfer the project** to your Linux server (e.g., `/opt/modeler`):
+```bash
+scp -r /path/to/modeler user@server:/opt/modeler
+```
+
+2. **Build and run:**
+```bash
+cd /opt/modeler
+docker compose up --build -d
+```
+
+3. **Access the UI** at `http://server-ip:8000`
+
+4. **Configure your LLM endpoint** via the **Settings** button in the browser:
+   - **API Endpoint**: e.g., `http://192.168.1.203:8000/v1`
+   - **Model Name**: your model (e.g., `qwen2.5-vl`)
+   - **API Key**: optional, if your llama-server requires one
+
+### Pre-set LLM Endpoint via Environment
+
+Edit `docker-compose.yml` before building to set your LLM endpoint:
+
+```yaml
+environment:
+  - LLM_ENDPOINT=http://192.168.1.203:8000/v1
+  - LLM_MODEL=your-model-name
+```
+
+Then run `docker compose up --build -d`.
+
+### Troubleshooting
+
+- **Container fails to start**: run `docker compose logs` to check for errors
+- **Playwright/Chromium fails**: rebuild with `docker compose build --no-cache`
+- **Can't reach llama-server**: ensure the server is reachable from the Docker host; `extra_hosts: host.docker.internal:host-gateway` in `docker-compose.yml` handles this on Linux
+- **Rebuild after code changes**: `docker compose up --build -d`
