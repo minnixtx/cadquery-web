@@ -43,6 +43,7 @@ class LLMClient:
             messages=[{"role": "user", "content": content}],
             temperature=0.2,
             max_tokens=4096,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         )
 
         return response.choices[0].message.content.strip()
