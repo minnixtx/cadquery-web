@@ -12,7 +12,7 @@ class ModelExporter:
         fd, tmp_path = tempfile.mkstemp(suffix=f".{ext}")
         try:
             os.close(fd)
-            result.export(tmp_path)
+            result.export(tmp_path, exportType=ext)
             with open(tmp_path, "rb") as f:
                 return f.read()
         finally:
