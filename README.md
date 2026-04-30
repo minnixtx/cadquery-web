@@ -1,4 +1,4 @@
-# NL 3D Modeler
+# cadquery-web
 
 Generate 3D CAD models from natural language using an LLM and CADQuery.
 
