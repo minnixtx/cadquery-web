@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 let scene, camera, renderer, controls, mesh;
+let ready = false;
 
 function init() {
     const container = document.getElementById('viewerContainer');
@@ -19,9 +20,13 @@ function init() {
     renderer.setSize(w, h);
     container.appendChild(renderer.domElement);
 
-    controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.1;
+    try {
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.1;
+    } catch (e) {
+        console.warn('OrbitControls failed, running without controls', e);
+    }
 
     const ambient = new THREE.AmbientLight(0x404040, 2);
     scene.add(ambient);
@@ -38,6 +43,7 @@ function init() {
     scene.add(grid);
 
     renderer.render(scene, camera);
+    ready = true;
     window.addEventListener('resize', onResize);
 }
 
@@ -54,12 +60,17 @@ function onResize() {
 
 function animate() {
     requestAnimationFrame(animate);
-    controls.update();
+    if (controls) controls.update();
     renderer.render(scene, camera);
 }
 
 function loadTjs(tjsBase64) {
     if (!tjsBase64 || !tjsBase64.trim()) return;
+
+    if (!ready) {
+        setTimeout(() => loadTjs(tjsBase64), 100);
+        return;
+    }
 
     if (mesh) {
         scene.remove(mesh);
@@ -105,8 +116,10 @@ function loadTjs(tjsBase64) {
     const camDist = (maxDim / 2) / Math.tan(fov / 2) * 2.0;
     camera.position.set(center.x + camDist * 0.5, center.y + camDist * 0.5, center.z + camDist * 0.7);
     camera.lookAt(center);
-    controls.target.copy(center);
-    controls.update();
+    if (controls) {
+        controls.target.copy(center);
+        controls.update();
+    }
 
     renderer.render(scene, camera);
 }
