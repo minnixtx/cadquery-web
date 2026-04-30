@@ -81,7 +81,7 @@ function loadObj(objBase64) {
         geo.computeVertexNormals();
     }
 
-    const mat = new THREE.MeshPhongMaterial({
+    const mat = new THREE.MeshStandardMaterial({
         color: 0x4a90d9,
         side: THREE.DoubleSide,
         shininess: 80,

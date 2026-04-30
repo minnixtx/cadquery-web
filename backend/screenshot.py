@@ -18,8 +18,8 @@ canvas { display: block; width: 800px; height: 600px; }
 <script type="importmap">
 {
   "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+    "three": "https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/"
   }
 }
 </script>
@@ -81,7 +81,7 @@ window.loadObj = function(objText) {
     if (normals.length > 0) {
         geo.computeVertexNormals();
     }
-    const mat = new THREE.MeshPhongMaterial({
+    const mat = new THREE.MeshStandardMaterial({
         color: 0x4a90d9,
         side: THREE.DoubleSide,
         shininess: 80,
