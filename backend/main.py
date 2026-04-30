@@ -41,7 +41,7 @@ class ExportRequest(BaseModel):
 # In-memory session state
 conversation_history: list[str] = []
 current_script: str = ""
-current_obj_base64: str = ""
+current_tjs_base64: str = ""
 executor = CadExecutor()
 
 
@@ -69,9 +69,9 @@ def update_settings(new: Settings):
 def chat(req: ChatRequest):
     """Process a natural language message, generate CADQuery code, execute it.
 
-    Returns the CADQuery script, OBJ data for the viewer, and chat response.
+    Returns the CADQuery script, TJS data for the viewer, and chat response.
     """
-    global conversation_history, current_script, current_obj_base64
+    global conversation_history, current_script, current_tjs_base64
 
     client = get_llm_client()
     user_message = req.message
@@ -111,17 +111,17 @@ def chat(req: ChatRequest):
     if error:
         raise HTTPException(status_code=500, detail=f"CADQuery error (retry failed): {error}")
 
-    # Export OBJ
+    # Export TJS
     try:
-        obj_b64 = ModelExporter.to_obj_base64(executor.result)
+        tjs_b64 = ModelExporter.to_tjs_base64(executor.result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Export error: {e}")
 
     # Visual self-assessment loop
     for _ in range(2):
         try:
-            obj_text = base64.b64decode(obj_b64).decode("utf-8")
-            screenshot_b64 = screenshotter.capture(obj_text)
+            tjs_text = base64.b64decode(tjs_b64).decode("utf-8")
+            screenshot_b64 = screenshotter.capture(tjs_text)
         except Exception:
             break
 
@@ -142,7 +142,7 @@ def chat(req: ChatRequest):
         if error:
             break
         try:
-            obj_b64 = ModelExporter.to_obj_base64(executor.result)
+            tjs_b64 = ModelExporter.to_tjs_base64(executor.result)
         except Exception:
             break
         code = fix_code
@@ -154,19 +154,19 @@ def chat(req: ChatRequest):
     if len(conversation_history) > 20:
         conversation_history = conversation_history[-16:]
     current_script = code
-    current_obj_base64 = obj_b64
+    current_tjs_base64 = tjs_b64
 
     return {
         "code": code,
-        "obj": obj_b64,
+        "tjs": tjs_b64,
         "response": success_msg,
     }
 
 
 @app.get("/api/model")
 def get_model():
-    """Return the current OBJ data for the 3D viewer."""
-    return {"obj": current_obj_base64, "code": current_script}
+    """Return the current TJS data for the 3D viewer."""
+    return {"tjs": current_tjs_base64, "code": current_script}
 
 
 @app.post("/api/export")

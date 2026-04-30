@@ -3,7 +3,7 @@ import os
 import tempfile
 from playwright.sync_api import sync_playwright
 
-# Minimal Three.js OBJ viewer HTML template
+# Minimal Three.js TJS viewer HTML template
 VIEWER_HTML = """\
 <!DOCTYPE html>
 <html>
@@ -51,45 +51,30 @@ const dir2 = new THREE.DirectionalLight(0xffffff, 1);
 dir2.position.set(-50, -30, -50);
 scene.add(dir2);
 
-window.loadObj = function(objText) {
-    const vertices = [];
-    const normals = [];
-    const faces = [];
-    const lines = objText.split('\\n');
-
-    for (const line of lines) {
-        const parts = line.trim().split(/\\s+/);
-        if (parts[0] === 'v' && parts.length >= 4) {
-            vertices.push(parseFloat(parts[1]), parseFloat(parts[2]), parseFloat(parts[3]));
-        } else if (parts[0] === 'vn' && parts.length >= 4) {
-            normals.push(parseFloat(parts[1]), parseFloat(parts[2]), parseFloat(parts[3]));
-        } else if (parts[0] === 'f' && parts.length >= 4) {
-            const faceVerts = [];
-            for (let i = 1; i < parts.length; i++) {
-                const indices = parts[i].split('/');
-                const vi = parseInt(indices[0]) - 1;
-                faceVerts.push(vertices[vi * 3], vertices[vi * 3 + 1], vertices[vi * 3 + 2]);
-            }
-            faces.push(...faceVerts);
-        }
+window.loadTjs = function(tjsText) {
+    const data = JSON.parse(tjsText);
+    const verts = new Float32Array(data.vertices);
+    const positions = [];
+    const step = 4;
+    for (let i = 0; i < data.faces.length; i += step) {
+        const a = data.faces[i + 1];
+        const b = data.faces[i + 2];
+        const c = data.faces[i + 3];
+        positions.push(verts[a*3], verts[a*3+1], verts[a*3+2]);
+        positions.push(verts[b*3], verts[b*3+1], verts[b*3+2]);
+        positions.push(verts[c*3], verts[c*3+1], verts[c*3+2]);
     }
-
-    if (faces.length === 0) return;
-
+    if (positions.length === 0) return;
     const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(faces, 3));
-    if (normals.length > 0) {
-        geo.computeVertexNormals();
-    }
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geo.computeVertexNormals();
     const mat = new THREE.MeshStandardMaterial({
         color: 0x4a90d9,
         side: THREE.DoubleSide,
-        shininess: 80,
         flatShading: false,
     });
     const mesh = new THREE.Mesh(geo, mat);
     scene.add(mesh);
-
     const box = new THREE.Box3().setFromObject(mesh);
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
@@ -101,7 +86,6 @@ window.loadObj = function(objText) {
     camera.lookAt(center);
     controls.target.copy(center);
     controls.update();
-
     window.__renderReady__ = true;
     renderer.render(scene, camera);
 };
@@ -114,16 +98,16 @@ renderer.render(scene, camera);
 
 
 class Screenshotter:
-    """Captures a screenshot of an OBJ model using headless Three.js + Playwright."""
+    """Captures a screenshot of a TJS model using headless Three.js + Playwright."""
 
     def __init__(self):
         self._html_path = None
 
-    def capture(self, obj_text: str) -> str:
-        """Render OBJ text in Three.js and return a base64-encoded PNG screenshot.
+    def capture(self, tjs_text: str) -> str:
+        """Render TJS JSON in Three.js and return a base64-encoded PNG screenshot.
 
         Args:
-            obj_text: The raw OBJ file content as a string.
+            tjs_text: The raw TJS JSON content as a string.
 
         Returns:
             Base64-encoded PNG screenshot string (no data URI prefix).
@@ -141,12 +125,12 @@ class Screenshotter:
                 page = browser.new_page(viewport={"width": 800, "height": 600})
                 page.goto(file_url, wait_until="networkidle")
 
-                # Wait for Three.js module to define window.loadObj
-                page.wait_for_function("typeof window.loadObj === 'function'", timeout=15000)
+                # Wait for Three.js module to define window.loadTjs
+                page.wait_for_function("typeof window.loadTjs === 'function'", timeout=15000)
 
-                # Inject OBJ data and render
-                obj_b64 = base64.b64encode(obj_text.encode()).decode()
-                page.evaluate(f"window.loadObj(atob('{obj_b64}'))")
+                # Inject TJS data and render
+                tjs_b64 = base64.b64encode(tjs_text.encode()).decode()
+                page.evaluate(f"window.loadTjs(atob('{tjs_b64}'))")
 
                 # Wait for render to complete
                 page.wait_for_function("window.__renderReady__", timeout=10000)

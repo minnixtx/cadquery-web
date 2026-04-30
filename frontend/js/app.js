@@ -86,8 +86,8 @@
             addMessage(data.response || 'Model generated.', 'assistant');
             updateCode(data.code);
 
-            if (data.obj) {
-                window.loadObj(data.obj);
+            if (data.tjs) {
+                window.loadTjs(data.tjs);
             }
         } catch (e) {
             loadingMsg.remove();

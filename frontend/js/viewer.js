@@ -58,8 +58,8 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-function loadObj(objBase64) {
-    if (!objBase64 || !objBase64.trim()) return;
+function loadTjs(tjsBase64) {
+    if (!tjsBase64 || !tjsBase64.trim()) return;
 
     if (mesh) {
         scene.remove(mesh);
@@ -68,23 +68,29 @@ function loadObj(objBase64) {
         mesh = null;
     }
 
-    const objText = atob(objBase64);
-    const { vertices, normals } = parseObj(objText);
+    const tjsText = atob(tjsBase64);
+    const data = JSON.parse(tjsText);
+    const verts = new Float32Array(data.vertices);
+    const positions = [];
 
-    if (vertices.length === 0) return;
+    for (let i = 0; i < data.faces.length; i += 4) {
+        const a = data.faces[i + 1];
+        const b = data.faces[i + 2];
+        const c = data.faces[i + 3];
+        positions.push(verts[a * 3], verts[a * 3 + 1], verts[a * 3 + 2]);
+        positions.push(verts[b * 3], verts[b * 3 + 1], verts[b * 3 + 2]);
+        positions.push(verts[c * 3], verts[c * 3 + 1], verts[c * 3 + 2]);
+    }
+
+    if (positions.length === 0) return;
 
     const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-    if (normals.length > 0) {
-        geo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
-    } else {
-        geo.computeVertexNormals();
-    }
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geo.computeVertexNormals();
 
     const mat = new THREE.MeshStandardMaterial({
         color: 0x4a90d9,
         side: THREE.DoubleSide,
-        shininess: 80,
         flatShading: false,
     });
 
@@ -105,61 +111,6 @@ function loadObj(objBase64) {
     renderer.render(scene, camera);
 }
 
-function parseObj(text) {
-    const vPositions = [];
-    const vNormals = [];
-    const lines = text.split('\n');
-
-    for (const line of lines) {
-        const parts = line.trim().split(/\s+/);
-        if (parts[0] === 'v' && parts.length >= 4) {
-            vPositions.push(parseFloat(parts[1]), parseFloat(parts[2]), parseFloat(parts[3]));
-        } else if (parts[0] === 'vn' && parts.length >= 4) {
-            vNormals.push(parseFloat(parts[1]), parseFloat(parts[2]), parseFloat(parts[3]));
-        }
-    }
-
-    const faceVerts = [];
-    const faceNorms = [];
-    const vertexSet = new Set();
-
-    for (const line of lines) {
-        const parts = line.trim().split(/\s+/);
-        if (parts[0] !== 'f' || parts.length < 4) continue;
-
-        const faceIndices = [];
-        const faceNormRef = [];
-        for (let i = 1; i < parts.length; i++) {
-            const ref = parts[i].split('/');
-            const vIdx = parseInt(ref[0]) - 1;
-            const nIdx = ref[2] ? parseInt(ref[2]) - 1 : -1;
-            faceIndices.push(vIdx);
-            faceNormRef.push(nIdx);
-        }
-
-        for (let i = 1; i < faceIndices.length - 1; i++) {
-            faceVerts.push(faceIndices[0], faceIndices[i], faceIndices[i + 1]);
-            faceNorms.push(faceNormRef[0], faceNormRef[i], faceNormRef[i + 1]);
-        }
-    }
-
-    const verts = [];
-    const norms = [];
-    for (let i = 0; i < faceVerts.length; i++) {
-        const vi = faceVerts[i];
-        if (!vertexSet.has(vi)) {
-            vertexSet.add(vi);
-        }
-        verts.push(vPositions[vi * 3], vPositions[vi * 3 + 1], vPositions[vi * 3 + 2]);
-        const ni = faceNorms[i];
-        if (ni >= 0 && vNormals.length > 0) {
-            norms.push(vNormals[ni * 3], vNormals[ni * 3 + 1], vNormals[ni * 3 + 2]);
-        }
-    }
-
-    return { vertices: verts, normals: norms };
-}
-
-window.loadObj = loadObj;
+window.loadTjs = loadTjs;
 init();
 animate();
